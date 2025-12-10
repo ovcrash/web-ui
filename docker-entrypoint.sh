@@ -2,33 +2,16 @@
 
 environment=${1:-"production"}
 
-# Configure the app's config.json with the API endpoint
-# In production with reverse proxy, the API is served from the same origin
+# Check if environment variable HASHTOPOLIS_BACKEND_URL is set
+# and use it with envsubst to set the backend url in the $app_cfg_base/config.json
 function update_app_config {
   app_cfg_base="$1"
-  
-  # For reverse proxy setup, the frontend accesses API via same origin
-  # HASHTOPOLIS_BACKEND_URL should be the external URL (what the browser sees)
-  # HASHTOPOLIS_BACKEND_URL_INTERNAL is used by nginx to proxy to the actual backend
-  
   if [ -n "$HASHTOPOLIS_BACKEND_URL" ]; then
     echo "Using HASHTOPOLIS_BACKEND_URL: $HASHTOPOLIS_BACKEND_URL"
     envsubst '${HASHTOPOLIS_BACKEND_URL}' < ${app_cfg_base}/assets/config.json.example > ${app_cfg_base}/assets/config.json
   fi
 
   echo "Done configuring up Hashtopolis frontend (env=$environment) at $app_cfg_base/assets/config.json"
-}
-
-# Configure nginx reverse proxy to backend
-function update_nginx_config {
-  if [ -n "$HASHTOPOLIS_BACKEND_URL_INTERNAL" ]; then
-    echo "Configuring nginx reverse proxy to: $HASHTOPOLIS_BACKEND_URL_INTERNAL"
-    envsubst '${HASHTOPOLIS_BACKEND_URL_INTERNAL}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
-  else
-    echo "WARNING: HASHTOPOLIS_BACKEND_URL_INTERNAL not set, reverse proxy disabled"
-    # Remove template and use basic config
-    rm -f /etc/nginx/conf.d/default.conf.template
-  fi
 }
 
 if [ "$environment" = "development" ]; then
@@ -53,7 +36,6 @@ if [ "$environment" = "development" ]; then
 else
   # Prepare configuration
   update_app_config "/usr/share/nginx/html"
-  update_nginx_config
 
   # Start worker instance
   echo "Starting worker nginx..."
