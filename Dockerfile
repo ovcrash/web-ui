@@ -56,6 +56,10 @@ FROM nginx:bookworm AS hashtopolis-web-ui-prod
 COPY --from=hashtopolis-web-ui-build /app/dist/ /usr/share/nginx/html
 COPY --from=hashtopolis-web-ui-build /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 COPY ./nginx/header.conf /etc/nginx/conf.d/header.conf
+COPY ./nginx/default.conf.template /etc/nginx/conf.d/default.conf.template
+
+# Remove default nginx config to avoid conflicts
+RUN rm -f /etc/nginx/conf.d/default.conf
 
 ENTRYPOINT [ "/bin/bash", "/usr/local/bin/docker-entrypoint.sh", "production" ]
 # ----END----
